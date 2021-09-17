@@ -1,7 +1,7 @@
 # Deploy WordPress to DigitalOcean with Sail
 
 [Sail](https://sailed.io) is a free CLI tool to deploy, manage and scale WordPress applications
-in the DigitalOcean cloud.
+in the DigitalOcean cloud. For support and announcements [join our Slack](https://join.slack.com/t/sailed/shared_invite/zt-vgnf8dfb-oPH1ZY1IwFSg_WyECYh5ow).
 
 Contents:
 
@@ -21,11 +21,14 @@ Contents:
 	+ [Rolling Back](#rolling-back)
 	+ [Downloading Changes from Production](#downloading-changes-from-production)
 * [Creating a Backup](#creating-a-backup)
+	* [Restoring a Backup](#restoring-a-backup)
 	+ [Exporting and Importing the Database](#exporting-and-importing-the-database)
 * [Accessing the Server and Application](#accessing-the-server-and-application)
 * [Accessing Logs](#accessing-logs)
 * [Integrating with Git](#integrating-with-git)
+* [Blueprints](#blueprints)
 * [Migrating existing projects to Sail](#migrating-existing-projects-to-sail)
+* [Support](#support)
 * [License and Contributing](#license-and-contributing)
 
 ## Installing Sail
@@ -273,7 +276,23 @@ local `.backups` directory.
 
 Don't forget to backup your backups.
 
-**TODO**: Restoring a backup
+### Restoring a Backup
+
+Backup files created by Sail can easily be restored back to production:
+
+```
+sail restore .backups/backup-filename.tar.gz
+```
+
+Note that this is not an atomic operation (like deploy) as it restores files
+directly to the public folder on production. Uploads and the database are also
+restored from the backup archive, these can be skipped with `--skip-uploads`
+and `--skip-db` respectively.
+
+A restored backup will not appear as a new release, so it can't easily be rolled
+back. It also does not affect the local working copy, which can become dirty as
+a result of this operation. It is recommended to use `sail download` after each
+restore.
 
 ### Exporting and Importing the Database
 
@@ -381,7 +400,52 @@ Note, that during a deploy, **everything** in your working copy, except dot file
 and uploads, will be shipped to your production server's public directory, even
 files that are not under source control.
 
-**TODO**: Deploy on push with GitHub Actions
+If you're looking for **push-to-deploy** with Git and GitHub Actions, check out
+[this simple tutorial](https://konstantin.blog/2021/sail-push-to-deploy-github-actions/)
+or [this video](https://youtu.be/6JkD8ekkAy8?t=4563).
+
+## Blueprints
+
+Blueprints in Sail are YAML files, which define the environment, where the WordPress
+application is provisioned. This can include things like non-default plugins, themes,
+options, constants, as well as additional server software and configuration.
+
+To apply a blueprint, simply run:
+
+```
+sail blueprint path/to/blueprint.yaml
+```
+
+You can apply a blueprint during an `init` as well:
+
+```
+sail init --blueprint path/to/blueprint.yaml
+```
+
+Blueprints allow developers to define custom variables. Sail will either prompt
+for these variables, or look for them on the command line interface. For example:
+
+```
+options:
+  blogname: {{ blogname }}
+
+vars:
+- name: blogname
+  prompt: What is your site name
+  option: --blogname
+  default: Just another WordPress site
+```
+
+This will cause an interactive prompt when applying the blueprint, unless
+the value for that variable is passed in using the `--blogname` option on
+the command line:
+
+```
+sail blueprint path/to/blueprint.yaml --blogname="My New Blog"
+```
+
+Sail ships with some sample and common blueprints, available in the blueprints
+directory.
 
 ## Migrating existing projects to Sail
 
@@ -400,6 +464,11 @@ a useful checklist to help you out.
 If everything is looking good, you should point your domain to Sail as described
 in the [Domains and DNS](#domains-and-dns) section. After DNS propagation is complete
 you should be able to request and install new SSL certificates for your application.
+
+## Support
+
+Community support is available in [our Slack workspace](https://join.slack.com/t/sailed/shared_invite/zt-vgnf8dfb-oPH1ZY1IwFSg_WyECYh5ow).
+If you do not use Slack, feel free to open an issue here on GitHub.
 
 ## License and Contributing
 
